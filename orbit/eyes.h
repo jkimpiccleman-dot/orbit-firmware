@@ -1,4 +1,6 @@
 // Orbit eyes: pure drawing math (no hardware). Ported from the HTML preview.
+
+rotation: 90
 #pragma once
 #include <math.h>
 #include <stdint.h>
