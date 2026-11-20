@@ -11,6 +11,10 @@
   Not in this build yet: touch, apps, home screen, wake word, AI, GPS.
   GPIO17 and GPIO18 are left alone because the GPS module uses them.
 */
+
+rotation: 90
+
+
 #include <Arduino.h>
 #include <Wire.h>
 #include "Arduino_GFX_Library.h"
