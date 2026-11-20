@@ -1,0 +1,138 @@
+name: Build Orbit firmware
+2
+
+3
+on:
+4
+  push:
+5
+  workflow_dispatch:
+6
+
+7
+jobs:
+8
+  build:
+9
+    runs-on: ubuntu-latest
+10
+    steps:
+11
+      - name: Get this repository
+12
+        uses: actions/checkout@v4
+13
+
+14
+      - name: Get Waveshare's libraries for the board
+15
+        run: git clone --depth 1 https://github.com/waveshareteam/ESP32-S3-Touch-AMOLED-1.75.git ../waveshare
+16
+
+17
+      - name: Install Arduino CLI
+18
+        uses: arduino/setup-arduino-cli@v2
+19
+
+20
+      - name: Install the ESP32 core (version Waveshare validated)
+21
+        run: |
+22
+          arduino-cli config init
+23
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+24
+          arduino-cli core update-index
+25
+          arduino-cli core install esp32:esp32@3.3.10
+26
+
+27
+      - name: Compile
+28
+        run: |
+29
+          arduino-cli compile \
+30
+            --fqbn "esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,FlashMode=qio,CDCOnBoot=cdc" \
+31
+            --libraries ../waveshare/examples/arduino/libraries \
+32
+            --output-dir build \
+33
+            orbit
+34
+
+35
+      - name: Collect the .bin files and flash offsets
+36
+        run: |
+37
+          mkdir -p out
+38
+          cp build/orbit.ino.bootloader.bin out/bootloader.bin
+39
+          cp build/orbit.ino.partitions.bin out/partitions.bin
+40
+          cp build/orbit.ino.bin out/orbit-firmware.bin
+41
+          cp "$(find ~/.arduino15 -name boot_app0.bin | head -n 1)" out/boot_app0.bin
+42
+          if [ -f build/orbit.ino.merged.bin ]; then
+43
+            cp build/orbit.ino.merged.bin out/orbit-merged.bin
+44
+          else
+45
+            pip install esptool
+46
+            python -m esptool --chip esp32s3 merge_bin -o out/orbit-merged.bin \
+47
+              0x0 out/bootloader.bin 0x8000 out/partitions.bin 0xe000 out/boot_app0.bin 0x10000 out/orbit-firmware.bin
+48
+          fi
+49
+          APP0=$(grep -i app0 build/partitions.csv | awk -F, '{gsub(/ /,"",$4); print $4}')
+50
+          {
+51
+            echo "EASIEST: flash ONE file, orbit-merged.bin, at offset 0x0"
+52
+            echo ""
+53
+            echo "OR flash these four files:"
+54
+            echo "  bootloader.bin     0x0"
+55
+            echo "  partitions.bin     0x8000"
+56
+            echo "  boot_app0.bin      0xE000"
+57
+            echo "  orbit-firmware.bin ${APP0:-0x10000}"
+58
+          } > out/FLASH_OFFSETS.txt
+59
+          cat out/FLASH_OFFSETS.txt
+60
+          echo "--- partition table ---"
+61
+          cat build/partitions.csv
+62
+          ls -l out
+63
+
+64
+      - name: Upload the .bin files
+65
+        uses: actions/upload-artifact@v4
+66
+        with:
+67
+          name: orbit-firmware
+68
+          path: out/
+69
+
+
