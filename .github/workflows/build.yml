@@ -46,7 +46,9 @@ jobs:
             python -m esptool --chip esp32s3 merge_bin -o out/orbit-merged.bin \
               0x0 out/bootloader.bin 0x8000 out/partitions.bin 0xe000 out/boot_app0.bin 0x10000 out/orbit-firmware.bin
           fi
-          APP0=$(grep -i app0 build/partitions.csv | awk -F, '{gsub(/ /,"",$4); print $4}')
+          CSV=$(find ~/.arduino15 -name app3M_fat9M_16MB.csv | head -n 1)
+          APP0=""
+          if [ -n "$CSV" ]; then APP0=$(grep -i app0 "$CSV" | head -n 1 | awk -F, '{gsub(/ /,"",$4); print $4}'); fi
           {
             echo "EASIEST: flash ONE file, orbit-merged.bin, at offset 0x0"
             echo ""
@@ -58,7 +60,7 @@ jobs:
           } > out/FLASH_OFFSETS.txt
           cat out/FLASH_OFFSETS.txt
           echo "--- partition table ---"
-          cat build/partitions.csv
+          if [ -n "$CSV" ]; then cat "$CSV"; fi
           ls -l out
 
       - name: Upload the .bin files
