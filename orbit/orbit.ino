@@ -57,7 +57,7 @@ rotation: 90
 Arduino_DataBus *bus = new Arduino_ESP32QSPI(
   LCD_CS, LCD_SCLK, LCD_SDIO0, LCD_SDIO1, LCD_SDIO2, LCD_SDIO3);
 Arduino_CO5300 *gfx = new Arduino_CO5300(
-  bus, LCD_RESET, 0 /* rotation */, LCD_WIDTH, LCD_HEIGHT, 6, 0, 0, 0);
+  bus, LCD_RESET, 1 /* rotation */, LCD_WIDTH, LCD_HEIGHT, 6, 0, 0, 0);
 
 SensorQMI8658 qmi;
 bool imuOk = false;
